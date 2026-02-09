@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: trivy-scan-job
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+      - name: trivy
+        image: aquasec/trivy:latest
+        args:
+          - image
+          - nginx:latest
+      restartPolicy: Never

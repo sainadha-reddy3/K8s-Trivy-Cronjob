@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trivy-scan-cron
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: trivy-sa
+          containers:
+          - name: trivy
+            image: aquasec/trivy:latest
+            command:
+              - sh
+              - -c
+              - >
+                trivy k8s cluster --report summary --format json -o /reports/cluster-$(date +%s).json
+            volumeMounts:
+              - name: report-storage
+                mountPath: /reports
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "200m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+          restartPolicy: Never
+          volumes:
+            - name: report-storage
+              persistentVolumeClaim:
+                claimName: trivy-report-pvc
